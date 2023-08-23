@@ -401,7 +401,7 @@ matched_taxa &lt;- bind_rows(matched_taxa_tibbles) %&gt;%
   ) %&gt;%
   rename(eventID = header_id) %&gt;%
   # fields that cannot be mapped to Darwin Core
-  select(-season_name, -census_days, -census_date_start, -census_date_end, -surveyed_san_telmo)  
+  select(-season_name, -census_days, -census_date_start, -census_date_end, -surveyed_san_telmo, -research_program)  
 
 # write to file
 write_tsv(event, here(&quot;data&quot;, &quot;generated&quot;, &quot;event.txt&quot;), na = &quot;&quot;)</code></pre>
@@ -453,6 +453,7 @@ occ_long &lt;- occ %&gt;%
     individualCount == 0 ~ &quot;absent&quot;,
     is.na(individualCount) ~ &quot;absent&quot;,  # I did not fill in 0 when it is empty to preserve
     TRUE ~ &quot;present&quot;),
+    # should I add total_count in dynamicProperties?
     dynamicProperties = sprintf(&#39;{&quot;total_count&quot;: %s}&#39;, total_count)
   ) %&gt;%
   select(-total_count) %&gt;%

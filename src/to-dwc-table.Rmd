@@ -59,7 +59,7 @@ event <- phoc_header %>%
   ) %>%
   rename(eventID = header_id) %>%
   # fields that cannot be mapped to Darwin Core
-  select(-season_name, -census_days, -census_date_start, -census_date_end, -surveyed_san_telmo)  
+  select(-season_name, -census_days, -census_date_start, -census_date_end, -surveyed_san_telmo, -research_program)  
 
 # write to file
 write_tsv(event, here("data", "generated", "event.txt"), na = "")
@@ -115,6 +115,7 @@ occ_long <- occ %>%
     individualCount == 0 ~ "absent",
     is.na(individualCount) ~ "absent",  # I did not fill in 0 when it is empty to preserve
     TRUE ~ "present"),
+    # should I add total_count in dynamicProperties?
     dynamicProperties = sprintf('{"total_count": %s}', total_count)
   ) %>%
   select(-total_count) %>%

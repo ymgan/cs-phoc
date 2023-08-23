@@ -42,20 +42,23 @@ matched_taxa <- bind_rows(matched_taxa_tibbles) %>%
 
 event <- phoc_header %>%
   mutate(
+    # eventDate is mandatory
     eventDate = if_else(census_date_start == census_date_end, census_date_start, 
-                        paste(census_date_start, census_date_end, sep = "/")),
+                        paste(census_date_start, census_date_end, sep = "/")),  
     # whatever that cannot be mapped to Darwin Core terms goes to dynamicProperties
     dynamicProperties = sprintf('{"research_program": "%s", "surveyed_san_telmo": %s}', research_program, ifelse(surveyed_san_telmo, "true", "false")),
     # add recommended Darwin Core terms: https://dwc.tdwg.org/terms/#event
     decimalLongitude = "",  # mandatory
     decimalLatitude = "",  # mandatory
-    coordinatePrecision = "",
-    coordinateUncertaintyInMeters = "",  
-    locality = "",
-    countryCode = "AQ",  # I assume that the records are 
-    locationID = "",
-    geodeticDatum = "EPSG:4326",
-    samplingProtocol = 'Please refer to sampling method in metadata'  
+    coordinatePrecision = "",  # coordinateUncertaintyInMeters is more important, you can skip this if you don't have it
+    coordinateUncertaintyInMeters = "",  # strongly recommended
+    locality = "",  # Ming recommends
+    countryCode = "AQ",  # strongly recommended, I assume that all the records are below 60 S?
+    sampleSizeValue = census_days,  # mandatory
+    sampleSizeUnit = ifelse(census_days <= 1, "day", "days"),  # mandatory
+    locationID = "",  # strongly recommended
+    geodeticDatum = "EPSG:4326",  # strongly recommended
+    samplingProtocol = ""  # mandatory
   ) %>%
   rename(eventID = header_id) %>%
   # fields that cannot be mapped to Darwin Core
@@ -84,8 +87,8 @@ occ <- phoc_count %>%
   # add recommended Darwin Core terms: https://dwc.tdwg.org/terms/#occurrence
   mutate(
     occurrenceID = "",  # mandatory
-    basisOfRecord = "HumanObservation",
-    identificationReferences = ""
+    basisOfRecord = "HumanObservation",  # mandatory
+    identificationReferences = ""  # Ming recommends
   )
 
 # create this subset so that I can left_join with this to have dateIdentified == eventDate without having to remove other fields from Event table

@@ -384,20 +384,23 @@ matched_taxa &lt;- bind_rows(matched_taxa_tibbles) %&gt;%
 <h2>Create Event table</h2>
 <pre class="r"><code>event &lt;- phoc_header %&gt;%
   mutate(
+    # eventDate is mandatory
     eventDate = if_else(census_date_start == census_date_end, census_date_start, 
-                        paste(census_date_start, census_date_end, sep = &quot;/&quot;)),
+                        paste(census_date_start, census_date_end, sep = &quot;/&quot;)),  
     # whatever that cannot be mapped to Darwin Core terms goes to dynamicProperties
     dynamicProperties = sprintf(&#39;{&quot;research_program&quot;: &quot;%s&quot;, &quot;surveyed_san_telmo&quot;: %s}&#39;, research_program, ifelse(surveyed_san_telmo, &quot;true&quot;, &quot;false&quot;)),
     # add recommended Darwin Core terms: https://dwc.tdwg.org/terms/#event
     decimalLongitude = &quot;&quot;,  # mandatory
     decimalLatitude = &quot;&quot;,  # mandatory
-    coordinatePrecision = &quot;&quot;,
-    coordinateUncertaintyInMeters = &quot;&quot;,  
-    locality = &quot;&quot;,
-    countryCode = &quot;AQ&quot;,  # I assume that the records are 
-    locationID = &quot;&quot;,
-    geodeticDatum = &quot;EPSG:4326&quot;,
-    samplingProtocol = &#39;Please refer to sampling method in metadata&#39;  
+    coordinatePrecision = &quot;&quot;,  # coordinateUncertaintyInMeters is more important, you can skip this if you don&#39;t have it
+    coordinateUncertaintyInMeters = &quot;&quot;,  # strongly recommended
+    locality = &quot;&quot;,  # Ming recommends
+    countryCode = &quot;AQ&quot;,  # strongly recommended, I assume that all the records are below 60 S?
+    sampleSizeValue = census_days,  # mandatory
+    sampleSizeUnit = ifelse(census_days &lt;= 1, &quot;day&quot;, &quot;days&quot;),  # mandatory
+    locationID = &quot;&quot;,  # strongly recommended
+    geodeticDatum = &quot;EPSG:4326&quot;,  # strongly recommended
+    samplingProtocol = &quot;&quot;  # mandatory
   ) %&gt;%
   rename(eventID = header_id) %&gt;%
   # fields that cannot be mapped to Darwin Core
@@ -422,8 +425,8 @@ write_tsv(event, here(&quot;data&quot;, &quot;generated&quot;, &quot;event.txt&q
   # add recommended Darwin Core terms: https://dwc.tdwg.org/terms/#occurrence
   mutate(
     occurrenceID = &quot;&quot;,  # mandatory
-    basisOfRecord = &quot;HumanObservation&quot;,
-    identificationReferences = &quot;&quot;
+    basisOfRecord = &quot;HumanObservation&quot;,  # mandatory
+    identificationReferences = &quot;&quot;  # Ming recommends
   )
 
 # create this subset so that I can left_join with this to have dateIdentified == eventDate without having to remove other fields from Event table

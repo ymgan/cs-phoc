@@ -121,11 +121,13 @@ occ_long <- occ %>%
     # should I add total_count in dynamicProperties?
     dynamicProperties = sprintf('{"total_count": %s}', total_count)
   ) %>%
-  select(-total_count) %>%
-  left_join(event_date, by = "eventID") %>% 
+  select(-total_count, -location) %>%
+  # to get eventDate based on eventID so that we can map that to dateIdentified
+  left_join(event_date, by = "eventID") %>%  
   mutate(
     dateIdentified = eventDate
-  )
+  ) %>%
+  select(-eventDate)  # remove eventDate since it is in the event table
 
 # write to file
 write_tsv(occ_long, here("data", "generated", "occurrence.txt"), na = "")

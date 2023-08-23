@@ -459,11 +459,13 @@ occ_long &lt;- occ %&gt;%
     # should I add total_count in dynamicProperties?
     dynamicProperties = sprintf(&#39;{&quot;total_count&quot;: %s}&#39;, total_count)
   ) %&gt;%
-  select(-total_count) %&gt;%
-  left_join(event_date, by = &quot;eventID&quot;) %&gt;% 
+  select(-total_count, -location) %&gt;%
+  # to get eventDate based on eventID so that we can map that to dateIdentified
+  left_join(event_date, by = &quot;eventID&quot;) %&gt;%  
   mutate(
     dateIdentified = eventDate
-  )
+  ) %&gt;%
+  select(-eventDate)  # remove eventDate since it is in the event table
 
 # write to file
 write_tsv(occ_long, here(&quot;data&quot;, &quot;generated&quot;, &quot;occurrence.txt&quot;), na = &quot;&quot;)</code></pre>

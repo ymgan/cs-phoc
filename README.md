@@ -24,7 +24,7 @@ This repository contains script to transform data files of [CS-PHOC](https://git
 
 ## Getting started
 
-This project uses [renv](https://rstudio.github.io/renv/) to manage the virtual environment. If dependencies are not automatically installed by `renv` when you open `humboldt.Rproj`, please try the following command.
+This project uses [renv](https://rstudio.github.io/renv/) to manage the virtual environment. If dependencies are not automatically installed by `renv` when you open `cs-phoc.Rproj`, please try the following command.
 
 ```
 renv::restore()

@@ -1,0 +1,131 @@
+---
+title: "Transform data to Darwin Core tables"
+author: "Yi-Ming Gan"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read data
+
+```{r read-data, warning=FALSE, message=FALSE}
+library(here)
+phoc_header <- read.csv(here("data", "raw", "2023-08-17_cs-phoc-headers.csv"))
+phoc_count <- read.csv(here("data", "raw", "2023-08-17_cs-phoc-counts.csv"), header = TRUE)
+```
+
+## Match species name with WoRMS to obtain taxa information
+
+```{r match-taxa, warning=FALSE, message=FALSE}
+library(tidyverse)
+library(worrms)
+
+# get a list of unique scientific names
+scientific_names <- unique(phoc_count$species)
+
+# match taxa using the list of unique scientific names
+matched_taxa_tibbles <- wm_records_names(scientific_names)
+
+# bind the list of tibbles returned into 1 tibble
+matched_taxa <- bind_rows(matched_taxa_tibbles) %>% 
+  # rename to scientificName so that there is column in common to join table
+  rename(scientificName = "scientificname") %>%
+  select(scientificName, lsid, rank, kingdom)
+```
+
+## Create Event table
+
+```{r create-event, warning=FALSE, message=FALSE}
+
+event <- phoc_header %>%
+  mutate(
+    eventDate = if_else(census_date_start == census_date_end, census_date_start, 
+                        paste(census_date_start, census_date_end, sep = "/")),
+    # whatever that cannot be mapped to Darwin Core terms goes to dynamicProperties
+    dynamicProperties = sprintf('{"research_program": "%s", "surveyed_san_telmo": %s}', research_program, ifelse(surveyed_san_telmo, "true", "false")),
+    # add recommended Darwin Core terms: https://dwc.tdwg.org/terms/#event
+    decimalLongitude = "",  # mandatory
+    decimalLatitude = "",  # mandatory
+    coordinatePrecision = "",
+    coordinateUncertaintyInMeters = "",  
+    locality = "",
+    countryCode = "AQ",  # I assume that the records are 
+    locationID = "",
+    geodeticDatum = "EPSG:4326",
+    samplingProtocol = 'Please refer to sampling method in metadata'  
+  ) %>%
+  rename(eventID = header_id) %>%
+  # fields that cannot be mapped to Darwin Core
+  select(-season_name, -census_days, -census_date_start, -census_date_end, -surveyed_san_telmo)  
+
+# write to file
+write_tsv(event, here("data", "generated", "event.txt"), na = "")
+
+```
+
+
+## Create Occurrence table
+
+```{r create-occurrence, warning=FALSE, message=FALSE}
+occ <- phoc_count %>% 
+  # rename to scientificName so that there is column in common to join with matched_taxa
+  rename(scientificName = species) %>% 
+  right_join(matched_taxa, by = "scientificName") %>%
+  # rename columns to Darwin Core terms
+  rename(
+    eventID = header_id,
+    vernacularName = species_common,
+    scientificNameID = lsid,
+    taxonRank = rank
+  ) %>%
+  # add recommended Darwin Core terms: https://dwc.tdwg.org/terms/#occurrence
+  mutate(
+    occurrenceID = "",  # mandatory
+    basisOfRecord = "HumanObservation",
+    identificationReferences = ""
+  )
+
+# create this subset so that I can left_join with this to have dateIdentified == eventDate without having to remove other fields from Event table
+event_date <- event %>% 
+  select(eventID, eventDate)
+
+# create the long table which collapses sex and lifeStage to generate the Occurrence table for Darwin Core Archive: https://rs.gbif.org/core/dwc_occurrence_2022-02-02.xml 
+occ_long <- occ %>%
+  # I don't create a separate record for total_count because it can be derived by summing up the taxon of all sexes and life stages from a specific event and I am worried that user will add that count together with the rest, doubling the count. 
+  pivot_longer(cols = starts_with("ad") | starts_with("juv") | starts_with("pup") | starts_with("unk"),
+               names_to = "lifeStage_sex", values_to = "individualCount") %>%
+  separate(lifeStage_sex, into = c("lifeStage", "sex"), sep = "_") %>%
+  mutate(lifeStage = case_when(
+    lifeStage == "ad" ~ "adult",
+    lifeStage == "juv" ~ "juvenile",
+    lifeStage == "pup" ~ "pup",
+    lifeStage == "unk" ~ "unknown",
+  ),
+  sex = case_when(
+    grepl("female", sex) ~ "female",
+    grepl("male", sex) ~ "male",
+    grepl("unk", sex) ~ "unknown",
+    grepl("count", sex) ~ "unknown"
+  )) %>%
+  mutate(
+    occurrenceStatus = case_when(
+    individualCount == 0 ~ "absent",
+    is.na(individualCount) ~ "absent",  # I did not fill in 0 when it is empty to preserve
+    TRUE ~ "present"),
+    dynamicProperties = sprintf('{"total_count": %s}', total_count)
+  ) %>%
+  select(-total_count) %>%
+  left_join(event_date, by = "eventID") %>% 
+  mutate(
+    dateIdentified = eventDate
+  )
+
+# write to file
+write_tsv(occ_long, here("data", "generated", "occurrence.txt"), na = "")
+
+```
+
+

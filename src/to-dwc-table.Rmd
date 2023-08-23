@@ -52,11 +52,12 @@ event <- phoc_header %>%
     decimalLatitude = "",  # mandatory
     coordinatePrecision = "",  # coordinateUncertaintyInMeters is more important, you can skip this if you don't have it
     coordinateUncertaintyInMeters = "",  # strongly recommended
-    locality = "",  # Ming recommends
+    locality = "",  
+    higherGeography = "",  # Ming recommends
+    higherGeographyID = "",  # Ming recommends
     countryCode = "AQ",  # strongly recommended, I assume that all the records are below 60 S?
     sampleSizeValue = census_days,  # mandatory
     sampleSizeUnit = ifelse(census_days <= 1, "day", "days"),  # mandatory
-    locationID = "",  # strongly recommended
     geodeticDatum = "EPSG:4326",  # strongly recommended
     samplingProtocol = ""  # mandatory
   ) %>%

@@ -394,11 +394,12 @@ matched_taxa &lt;- bind_rows(matched_taxa_tibbles) %&gt;%
     decimalLatitude = &quot;&quot;,  # mandatory
     coordinatePrecision = &quot;&quot;,  # coordinateUncertaintyInMeters is more important, you can skip this if you don&#39;t have it
     coordinateUncertaintyInMeters = &quot;&quot;,  # strongly recommended
-    locality = &quot;&quot;,  # Ming recommends
+    locality = &quot;&quot;,  
+    higherGeography = &quot;&quot;,  # Ming recommends
+    higherGeographyID = &quot;&quot;,  # Ming recommends
     countryCode = &quot;AQ&quot;,  # strongly recommended, I assume that all the records are below 60 S?
     sampleSizeValue = census_days,  # mandatory
     sampleSizeUnit = ifelse(census_days &lt;= 1, &quot;day&quot;, &quot;days&quot;),  # mandatory
-    locationID = &quot;&quot;,  # strongly recommended
     geodeticDatum = &quot;EPSG:4326&quot;,  # strongly recommended
     samplingProtocol = &quot;&quot;  # mandatory
   ) %&gt;%

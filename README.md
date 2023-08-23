@@ -1,6 +1,6 @@
 # CS-PHOC
 
-This repository contains script to transform data files of CS-PHOC into Darwin Core compliant tables.
+This repository contains script to transform data files of [CS-PHOC](https://github.com/us-amlr/cs-phoc/) into Darwin Core compliant tables.
 
 ## Repo structure 
 
